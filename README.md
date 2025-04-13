@@ -69,4 +69,4 @@ You can auto-start this app on boot via:
 
 ## 👤 Author
 
-Made with ❤️ by [Your Name] — [emphyrio.io](https://emphyrio.io)
+[emphyrio.io](https://emphyrio.io)
