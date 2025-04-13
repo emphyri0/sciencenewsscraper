@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Beheer RSS-feeds</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+  <div class="max-w-3xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold text-indigo-600 dark:text-indigo-300 mb-6">Beheer RSS-feeds</h1>
+
+    {% if message %}
+      <div class="mb-4 p-3 rounded bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">
+        {{ message }}
+      </div>
+    {% endif %}
+
+    <form method="POST" class="grid sm:grid-cols-3 gap-4 mb-8">
+      <input
+        type="text"
+        name="feed_name"
+        required
+        placeholder="Naam (bv. NASA)"
+        class="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+      >
+      <input
+        type="url"
+        name="feed_url"
+        required
+        placeholder="https://example.com/rss"
+        class="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+      >
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
+        Feed toevoegen
+      </button>
+    </form>
+
+    <h2 class="text-xl font-semibold mb-2">Huidige feeds</h2>
+    <ul class="space-y-4">
+      {% for id, url, name, active in feeds %}
+        <li class="p-4 bg-white dark:bg-gray-800 rounded shadow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <p class="font-semibold text-indigo-700 dark:text-indigo-300">{{ name }}</p>
+            <a href="{{ url }}" target="_blank" class="text-sm text-blue-600 dark:text-blue-300 hover:underline">{{ url }}</a>
+            <p class="text-xs mt-1 text-gray-500 dark:text-gray-400">Status: 
+              {% if active %}
+                ✅ Actief
+              {% else %}
+                🚫 Inactief
+              {% endif %}
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <form method="POST" action="/feeds/toggle/{{ id }}">
+              <button class="text-sm px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-black rounded">
+                {% if active %} Deactiveer {% else %} Activeer {% endif %}
+              </button>
+            </form>
+            <form method="POST" action="/feeds/delete/{{ id }}">
+              <button class="text-sm px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded" onclick="return confirm('Verwijder deze feed?')">
+                Verwijderen
+              </button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <div class="mt-10">
+      <a href="/" class="text-sm text-indigo-600 hover:underline">&larr; Terug naar dashboard</a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>emphyrio.io — Science & Tech News</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>document.documentElement.classList.add('dark');</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="font-sans bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <header class="flex justify-between items-center mb-6">
+      <a href="/" class="flex items-center gap-2">
+        <i data-lucide="atom" class="w-6 h-6 text-blue-600"></i>
+        <span class="text-xl font-semibold">emphyrio.io</span>
+      </a>
+      <div class="flex items-center gap-3">
+        <a href="/feeds" title="Manage feeds">
+          <i data-lucide="rss" class="w-5 h-5"></i>
+        </a>
+        <a href="/?favorites=1" title="View favorites">
+          <i data-lucide="heart" class="w-5 h-5"></i>
+        </a>
+        <a href="/refresh" title="Refresh feeds">
+          <i data-lucide="refresh-ccw" class="w-5 h-5"></i>
+        </a>
+        <button id="darkToggle" title="Toggle dark mode">
+          <i data-lucide="moon" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </header>
+
+    
+      <form method="get" action="/" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div class="flex gap-2 w-full md:w-1/2">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search articles..." class="w-full px-3 py-2 rounded-lg border shadow-sm text-sm focus:outline-none focus:ring focus:border-blue-400 dark:bg-gray-800 dark:border-gray-700">
+        <select name="feed" onchange="this.form.submit()" class="px-2 py-2 rounded-lg border text-sm dark:bg-gray-800 dark:text-white dark:border-gray-600">
+          <option value="">All Feeds</option>
+          {% for fid, fname in all_feeds %}
+            <option value="{{ fid }}" {% if selected_feed == fid|string %}selected{% endif %}>{{ fname }}</option>
+          {% endfor %}
+        </select>
+
+        </div>
+    </form>
+
+    <div class="flex justify-end mb-4">
+        <button id="toggleView" type="button" class="text-sm px-3 py-1 border rounded dark:bg-gray-700 dark:text-white">🗂️ Switch to List View</button>
+      </div>
+
+    {% if articles %}
+      <div id="articleContainer" class="grid gap-6 md:grid-cols-2">
+          {% for id, title, summary, url, date, favorite, feed_name in articles %}
+            <div class="article-card bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex items-center justify-between">
+              <div>
+                <h2 class="text-base font-medium text-blue-600 dark:text-blue-300 cursor-pointer hover:underline" onclick="openModal(`{{ title|escape }}`, `{{ summary|escape }}`, `{{ url }}`)">{{ title }}</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">📡 {{ feed_name or 'Unknown' }} &nbsp; | &nbsp; {{ date }}</p>
+              </div>
+              <a href="/favorite/{{ id }}" class="ml-4">
+                {% if favorite %}
+                  <i data-lucide="heart" class="w-5 h-5 fill-red-500 stroke-red-600"></i>
+                {% else %}
+                  <i data-lucide="heart" class="w-5 h-5 text-gray-400 dark:text-gray-600"></i>
+                {% endif %}
+              </a>
+            </div>
+          {% endfor %}
+
+        <!-- Modal -->
+        <div id="articleModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center">
+          <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-xl w-full relative shadow-xl">
+            <button onclick="closeModal()" class="absolute top-2 right-3 text-gray-500 hover:text-red-500">
+              <i data-lucide="x"></i>
+            </button>
+            <h2 id="modalTitle" class="text-xl font-bold text-blue-600 dark:text-blue-300 mb-4"></h2>
+            <div id="modalSummary" class="text-gray-700 dark:text-gray-300 mb-4 text-sm"></div>
+            <a id="modalLink" href="#" target="_blank" class="text-blue-500 hover:underline">Read full article →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-10 flex justify-center items-center gap-4 text-sm">
+        {% if page > 1 %}
+          <a href="/?page={{ page - 1 }}{% if query %}&q={{ query }}{% endif %}{% if favorites_only %}&favorites=1{% endif %}{% if selected_feed %}&feed={{ selected_feed }}{% endif %}" class="hover:underline">&larr; Previous</a>
+        {% endif %}
+        <span>Page {{ page }} of {{ total_pages }}</span>
+        {% if page < total_pages %}
+          <a href="/?page={{ page + 1 }}{% if query %}&q={{ query }}{% endif %}{% if favorites_only %}&favorites=1{% endif %}{% if selected_feed %}&feed={{ selected_feed }}{% endif %}" class="hover:underline">Next &rarr;</a>
+        {% endif %}
+      </div>
+    {% else %}
+      <p class="text-gray-500 dark:text-gray-400 text-lg">No articles found. Try a different search or filter.</p>
+    {% endif %}
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      // regenerate icons after DOM changes
+      lucide.createIcons();
+    });
+
+    const toggleBtn = document.getElementById('toggleView');
+    const container = document.getElementById('articleContainer');
+    let listView = window.innerWidth < 768;
+
+    function updateViewMode() {
+      container.classList.toggle('grid', !listView);
+      container.classList.toggle('md:grid-cols-2', !listView);
+      container.classList.toggle('flex', listView);
+      container.classList.toggle('flex-col', listView);
+
+      document.querySelectorAll('.article-card').forEach(card => {
+        card.classList.toggle('flex-row', listView);
+        card.classList.toggle('items-start', listView);
+        card.classList.toggle('p-2', listView);
+        card.classList.toggle('p-4', !listView);
+        card.classList.toggle('border-b', listView);
+        card.classList.toggle('rounded-xl', !listView);
+        card.classList.toggle('rounded-none', listView);
+        card.classList.toggle('shadow', !listView);
+        card.classList.toggle('shadow-none', listView);
+        card.querySelector('h2')?.classList.toggle('text-sm', listView);
+        card.querySelector('h2')?.classList.toggle('text-base', !listView);
+      });
+
+      toggleBtn.textContent = listView ? '📋 Switch to Grid View' : '🗂️ Switch to List View';
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      listView = !listView;
+      updateViewMode();
+
+    updateViewMode();
+      lucide.createIcons();
+    });
+    document.getElementById('darkToggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+    });
+  </script>
+<script>
+    function openModal(title, summary, link) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalSummary').innerHTML = summary;
+      document.getElementById('modalLink').href = link;
+      document.getElementById('articleModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('articleModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
